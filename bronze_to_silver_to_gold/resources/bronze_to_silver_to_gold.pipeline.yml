@@ -1,0 +1,14 @@
+resources:
+  pipelines:
+    bronze_to_silver_to_gold:
+      name: Bronze-to-Silver-to-Gold
+      libraries:
+        - glob:
+            include: ../src/bronze_to_silver_to_gold/transformations/**
+      catalog: workspace
+      channel: CURRENT
+      continuous: false
+      photon: true
+      root_path: ../src/bronze_to_silver_to_gold
+      schema: default
+      serverless: true

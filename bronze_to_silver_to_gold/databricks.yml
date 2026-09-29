@@ -1,0 +1,27 @@
+# Declarative Automation Bundle configuration, more info here: https://docs.databricks.com/en/dev-tools/bundles/settings.html
+bundle:
+  name: "bronze_to_silver_to_gold"
+
+include:
+  - resources/*.yml
+  - resources/*/*.yml
+
+targets:
+  # The 'dev' target, for development purposes. This target is the default.
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://dbc-56c30659-75d0.cloud.databricks.com
+
+  # The 'prod' target, used for production deployment.
+  prod:
+    mode: production
+    workspace:
+      host: https://dbc-56c30659-75d0.cloud.databricks.com
+      # We always use /Users/sthapit.dnsh@gmail.com for all resources to make sure we only have a single copy.
+      root_path: /Users/sthapit.dnsh@gmail.com/.bundle/${bundle.name}/${bundle.target}
+    run_as:
+      # This runs as sthapit.dnsh@gmail.com in production. We could also use a service principal here,
+      # see https://docs.databricks.com/dev-tools/bundles/permissions.html.
+      user_name: sthapit.dnsh@gmail.com
