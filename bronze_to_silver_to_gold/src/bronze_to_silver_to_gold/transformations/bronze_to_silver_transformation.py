@@ -60,6 +60,18 @@ def joint_statements_silver():
         "tv licence": [
             "tv licence",
         ],
+        "broadband&tv": [
+                "sky digital",
+            ],
+        "takeaways": [
+                "andoz",
+                "deliveroo",
+                "uber eats",
+                "bamboo garden",
+            ],
+        "charities": [
+            "woodland trust",
+        ],
         "incomings": [
             "d sthapit",
             "c rimmer",
