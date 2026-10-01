@@ -1,0 +1,16 @@
+resources:
+  pipelines:
+    bronze_to_silver_to_gold_budget_etl:
+      name: Bronze-to-Silver-to-Gold-Budget-ETL-Pipeline
+      libraries:
+        - glob:
+            include: ../src/Bronze-to-Silver-to-Gold-Budget-ETL-Pipeline/transformations/**
+        - glob:
+            include: ../src/config/**
+      catalog: workspace
+      channel: CURRENT
+      continuous: false
+      photon: true
+      root_path: ../src/Bronze-to-Silver-to-Gold-Budget-ETL-Pipeline
+      schema: default
+      serverless: true
