@@ -1,14 +1,14 @@
 resources:
   pipelines:
     bronze_to_silver_to_gold:
-      name: Bronze-to-Silver-to-Gold
+      name: Bronze-to-Silver-to-Gold-Statements-ETL-Pipeline
       libraries:
         - glob:
-            include: ../src/bronze_to_silver_to_gold/transformations/**
+            include: ../src/Bronze-to-Silver-to-Gold-Statements-ETL-Pipeline/transformations/**
       catalog: workspace
       channel: CURRENT
       continuous: false
       photon: true
-      root_path: ../src/bronze_to_silver_to_gold
+      root_path: ../src/Bronze-to-Silver-to-Gold-Statements-ETL-Pipeline
       schema: default
       serverless: true
