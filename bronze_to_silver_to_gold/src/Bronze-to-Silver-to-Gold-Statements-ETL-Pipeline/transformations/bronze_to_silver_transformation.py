@@ -1,6 +1,7 @@
 from pyspark.sql.functions import to_date, col, lower, when, lit
 from pyspark import pipelines as dp
 
+from bronze_to_silver_to_gold.src.config.categories import categories
 
 @dp.materialized_view(
     name="joint_statements_silver.joint_statements",
@@ -32,63 +33,21 @@ def joint_statements_silver():
 
     # Add a category column
 
-    categories = {
-        "mortgage": ["Leeds Building Soc"],
-        "groceries": [
-            "sainsburys",
-            "lidl",
-            "marks&spencer",
-            "aldi",
-            "tesco",
-            "morrisons",
-        ],
-        "utilities": [
-            "octopus",
-            "yorkshire water",
-        ],
-        "insurances": [
-            "aviva",
-            "home insurance",
-        ],
-        "loans": [
-            "novuna personal",
-            "lloyds bank loan",
-        ],
-        "council tax": [
-            "sheffield city",
-        ],
-        "tv licence": [
-            "tv licence",
-        ],
-        "broadband&tv": [
-                "sky digital",
-            ],
-        "takeaways": [
-                "andoz",
-                "deliveroo",
-                "uber eats",
-                "bamboo garden",
-            ],
-        "charities": [
-            "woodland trust",
-        ],
-        "incomings": [
-            "d sthapit",
-            "c rimmer",
-        ],
-    }
-
     # Build a chained when() expression — Spark evaluates conditions in order,
     # so the first matching category wins
     desc_lower = lower(col("description"))
     category_expr = None
 
-    for category, keywords in categories.items():
+    for category, map in categories.items():
         # OR together all keywords for this category
         condition = None
-        for keyword in keywords:
+        for keyword in map["statement"]:
             check = desc_lower.contains(keyword.lower())
             condition = check if condition is None else condition | check
+        if category == "incomings":
+            condition = condition & col("credit").isNotNull()
+        if category == "widthdrawals":
+            condition = condition & col("debit").isNotNull()
         if category_expr is None:
             category_expr = when(condition, lit(category))
         else:
