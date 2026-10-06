@@ -1,19 +1,14 @@
 {
   "datasets": [
     {
-      "name": "c6d2cd52",
-      "displayName": "joint_statements",
+      "name": "a4798d1c",
+      "displayName": "joint_budget",
       "config": {
         "version": "1.1",
-        "source": "workspace.joint_statements_gold.joint_statements",
+        "source": "workspace.joint_account_budget_gold.joint_budget",
         "dimensions": [
           {
             "expr": "source.*"
-          },
-          {
-            "name": "year_month",
-            "expr": "CONCAT(CAST(source.year AS STRING), '-', LPAD(CAST(source.month AS STRING), 2, '0'))",
-            "displayName": "Year-Month"
           }
         ],
         "measures": [
@@ -25,21 +20,246 @@
           }
         ]
       }
+    },
+    {
+      "name": "3a97cf87",
+      "displayName": "Statements with Budget",
+      "queryLines": [
+        "WITH budgets AS (\n",
+        "SELECT b.category,\n",
+        "    b.budget,\n",
+        "    b.previous_budget,\n",
+        "    b.change_in_budget,\n",
+        "    b.year * 12 + b.month AS budget_month,\n",
+        "    LEAD(b.year * 12 + b.month, 1) OVER (\n",
+        "        PARTITION BY b.category \n",
+        "        ORDER BY b.year, b.month\n",
+        "    ) AS next_budget_month\n",
+        "FROM workspace.joint_account_budget_gold.joint_budget b\n",
+        ")\n",
+        "SELECT\n",
+        "    *\n",
+        "FROM workspace.joint_statements_gold.joint_statements s\n",
+        "INNER JOIN budgets b\n",
+        "    ON s.category = b.category\n",
+        "    AND s.year * 12 + s.month >= b.budget_month\n",
+        "    AND (b.next_budget_month IS NULL OR s.year * 12 + s.month < b.next_budget_month)\n",
+        "ORDER BY s.year, s.month;"
+      ],
+      "columns": [
+        {
+          "displayName": "net_savings",
+          "description": "Net savings = incomings minus outgoings per category",
+          "expression": "`incomings` - `outgoings`"
+        }
+      ]
     }
   ],
   "pages": [
     {
+      "name": "5c2e42ae",
+      "displayName": "Global Filters",
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
       "name": "581eafa8",
-      "displayName": "Overview per month",
+      "displayName": "Monthly overview - Expenses",
       "layout": [
         {
           "widget": {
-            "name": "457f5e8b",
+            "name": "year",
+            "queries": [
+              {
+                "name": "dashboards/01f1bd0359db1d0b91dd8ef7743b122d/datasets/01f1c1a7cc36114e9093efa0fe18847b_year",
+                "query": {
+                  "datasetName": "3a97cf87",
+                  "fields": [
+                    {
+                      "name": "year",
+                      "expression": "`year`"
+                    },
+                    {
+                      "name": "year_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "disallowAll": true,
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Year",
+                  "fields": []
+                }
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "year",
+                    "queryName": "dashboards/01f1bd0359db1d0b91dd8ef7743b122d/datasets/01f1c1a7cc36114e9093efa0fe18847b_year"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "month",
+            "queries": [
+              {
+                "name": "dashboards/01f1bd0359db1d0b91dd8ef7743b122d/datasets/01f1c1a7cc36114e9093efa0fe18847b_month",
+                "query": {
+                  "datasetName": "3a97cf87",
+                  "fields": [
+                    {
+                      "name": "month",
+                      "expression": "`month`"
+                    },
+                    {
+                      "name": "month_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "disallowAll": true,
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Month",
+                  "fields": []
+                }
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "month",
+                    "queryName": "dashboards/01f1bd0359db1d0b91dd8ef7743b122d/datasets/01f1c1a7cc36114e9093efa0fe18847b_month"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 4,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "4e161497",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "c6d2cd52",
+                  "datasetName": "3a97cf87",
+                  "fields": [
+                    {
+                      "name": "category",
+                      "expression": "`category`"
+                    },
+                    {
+                      "name": "outgoings",
+                      "expression": "`outgoings`"
+                    },
+                    {
+                      "name": "budget",
+                      "expression": "`budget`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 1
+                  }
+                ]
+              },
+              "widgetType": "combo",
+              "encodings": {
+                "x": {
+                  "fieldName": "category",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": false
+                },
+                "color": {
+                  "legend": {
+                    "position": "top"
+                  }
+                },
+                "y": {
+                  "primary": {
+                    "fields": [
+                      {
+                        "fieldName": "outgoings",
+                        "displayName": "Expenses(£)"
+                      }
+                    ]
+                  },
+                  "secondary": {
+                    "fields": [
+                      {
+                        "fieldName": "budget",
+                        "displayName": "Budget(£)"
+                      }
+                    ]
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "d108cf45",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "3a97cf87",
                   "fields": [
                     {
                       "name": "category",
@@ -55,13 +275,6 @@
               }
             ],
             "spec": {
-              "frame": {
-                "showTitle": true,
-                "title": {
-                  "value": "Change in Outgoings by Category",
-                  "fields": []
-                }
-              },
               "version": 3,
               "widgetType": "bar",
               "encodings": {
@@ -89,188 +302,12 @@
           "position": {
             "x": 0,
             "y": 7,
-            "width": 8,
-            "height": 6
-          }
-        },
-        {
-          "widget": {
-            "name": "year",
-            "queries": [
-              {
-                "name": "dashboards/01f1bd0359db1d0b91dd8ef7743b122d/datasets/01f1bd037db41a14a6eeb94a4cdc1ce2_year",
-                "query": {
-                  "datasetName": "c6d2cd52",
-                  "fields": [
-                    {
-                      "name": "year",
-                      "expression": "`year`"
-                    },
-                    {
-                      "name": "year_associativity",
-                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 2,
-              "selection": {
-                "defaultSelection": {
-                  "operator": {
-                    "operator": "OR",
-                    "args": []
-                  }
-                }
-              },
-              "disallowAll": true,
-              "frame": {
-                "showTitle": true,
-                "title": {
-                  "value": "Year",
-                  "fields": []
-                }
-              },
-              "widgetType": "filter-single-select",
-              "encodings": {
-                "fields": [
-                  {
-                    "fieldName": "year",
-                    "queryName": "dashboards/01f1bd0359db1d0b91dd8ef7743b122d/datasets/01f1bd037db41a14a6eeb94a4cdc1ce2_year"
-                  }
-                ]
-              }
-            }
-          },
-          "position": {
-            "x": 0,
-            "y": 0,
-            "width": 4,
-            "height": 1
-          }
-        },
-        {
-          "widget": {
-            "name": "month",
-            "queries": [
-              {
-                "name": "dashboards/01f1bd0359db1d0b91dd8ef7743b122d/datasets/01f1bd037db41a14a6eeb94a4cdc1ce2_month",
-                "query": {
-                  "datasetName": "c6d2cd52",
-                  "fields": [
-                    {
-                      "name": "month",
-                      "expression": "`month`"
-                    },
-                    {
-                      "name": "month_associativity",
-                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 2,
-              "selection": {
-                "defaultSelection": {
-                  "operator": {
-                    "operator": "OR",
-                    "args": []
-                  }
-                }
-              },
-              "disallowAll": true,
-              "frame": {
-                "showTitle": true,
-                "title": {
-                  "value": "Month",
-                  "fields": []
-                }
-              },
-              "widgetType": "filter-single-select",
-              "encodings": {
-                "fields": [
-                  {
-                    "fieldName": "month",
-                    "queryName": "dashboards/01f1bd0359db1d0b91dd8ef7743b122d/datasets/01f1bd037db41a14a6eeb94a4cdc1ce2_month"
-                  }
-                ]
-              }
-            }
-          },
-          "position": {
-            "x": 4,
-            "y": 0,
-            "width": 4,
-            "height": 1
-          }
-        },
-        {
-          "widget": {
-            "name": "4e161497",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "c6d2cd52",
-                  "fields": [
-                    {
-                      "name": "category",
-                      "expression": "`category`"
-                    },
-                    {
-                      "name": "outgoings",
-                      "expression": "`outgoings`"
-                    }
-                  ],
-                  "disaggregated": true
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "bar",
-              "encodings": {
-                "x": {
-                  "fieldName": "category",
-                  "scale": {
-                    "type": "categorical"
-                  }
-                },
-                "y": {
-                  "fieldName": "outgoings",
-                  "scale": {
-                    "type": "quantitative"
-                  }
-                },
-                "label": {
-                  "show": true
-                }
-              },
-              "data": {
-                "queryName": "main_query"
-              }
-            }
-          },
-          "position": {
-            "x": 0,
-            "y": 1,
-            "width": 8,
-            "height": 6
+            "width": 6,
+            "height": 5
           }
         }
       ],
       "pageType": "PAGE_TYPE_CANVAS",
-      "layoutVersion": "GRID_V1"
-    },
-    {
-      "name": "5c2e42ae",
-      "displayName": "Global Filters",
-      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
       "layoutVersion": "GRID_V1"
     }
   ],
