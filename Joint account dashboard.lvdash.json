@@ -26,10 +26,7 @@
       "displayName": "Statements with Budget",
       "queryLines": [
         "WITH budgets AS (\n",
-        "SELECT b.category,\n",
-        "    b.budget,\n",
-        "    b.previous_budget,\n",
-        "    b.change_in_budget,\n",
+        "SELECT *,\n",
         "    b.year * 12 + b.month AS budget_month,\n",
         "    LEAD(b.year * 12 + b.month, 1) OVER (\n",
         "        PARTITION BY b.category \n",
@@ -37,10 +34,15 @@
         "    ) AS next_budget_month\n",
         "FROM workspace.joint_account_budget_gold.joint_budget b\n",
         ")\n",
-        "SELECT\n",
-        "    *\n",
+        "SELECT \n",
+        "    s.year, s.month, s.category,\n",
+        "    s.outgoings, s.incomings, \n",
+        "    s.previous_outgoings, s.previous_incomings,\n",
+        "    s.change_in_outgoings, s.change_in_incomings,\n",
+        "    b.budget, b.previous_budget, b.change_in_budget,\n",
+        "    b.budget_month, b.next_budget_month\n",
         "FROM workspace.joint_statements_gold.joint_statements s\n",
-        "INNER JOIN budgets b\n",
+        "LEFT JOIN budgets b\n",
         "    ON s.category = b.category\n",
         "    AND s.year * 12 + s.month >= b.budget_month\n",
         "    AND (b.next_budget_month IS NULL OR s.year * 12 + s.month < b.next_budget_month)\n",
@@ -53,6 +55,27 @@
           "expression": "`incomings` - `outgoings`"
         }
       ]
+    },
+    {
+      "name": "9a2f50fd",
+      "displayName": "joint_statements",
+      "config": {
+        "version": "1.1",
+        "source": "workspace.joint_statements_gold.joint_statements",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
     }
   ],
   "pages": [
@@ -110,7 +133,7 @@
             }
           },
           "position": {
-            "x": 0,
+            "x": 2,
             "y": 0,
             "width": 4,
             "height": 1
@@ -160,7 +183,7 @@
             }
           },
           "position": {
-            "x": 4,
+            "x": 6,
             "y": 0,
             "width": 4,
             "height": 1
@@ -248,7 +271,7 @@
           "position": {
             "x": 0,
             "y": 1,
-            "width": 6,
+            "width": 10,
             "height": 6
           }
         },
@@ -302,7 +325,7 @@
           "position": {
             "x": 0,
             "y": 7,
-            "width": 6,
+            "width": 10,
             "height": 5
           }
         }
