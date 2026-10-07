@@ -26,10 +26,7 @@
       "displayName": "Statements with Budget",
       "queryLines": [
         "WITH budgets AS (\n",
-        "SELECT b.category,\n",
-        "    b.budget,\n",
-        "    b.previous_budget,\n",
-        "    b.change_in_budget,\n",
+        "SELECT *,\n",
         "    b.year * 12 + b.month AS budget_month,\n",
         "    LEAD(b.year * 12 + b.month, 1) OVER (\n",
         "        PARTITION BY b.category \n",
@@ -37,10 +34,24 @@
         "    ) AS next_budget_month\n",
         "FROM workspace.joint_account_budget_gold.joint_budget b\n",
         ")\n",
-        "SELECT\n",
-        "    *\n",
+        "SELECT \n",
+        "    s.year, s.month, s.category,\n",
+        "    s.outgoings, s.incomings, \n",
+        "    s.previous_outgoings, s.previous_incomings,\n",
+        "    s.change_in_outgoings, s.change_in_incomings,\n",
+        "    CASE\n",
+        "        WHEN b.budget IS NULL THEN 0\n",
+        "        ELSE b.budget\n",
+        "    END AS budget,\n",
+        "    b.previous_budget, b.change_in_budget,\n",
+        "    b.budget_month, b.next_budget_month,\n",
+        "    CASE\n",
+        "        WHEN s.incomings IS NULL THEN -s.outgoings\n",
+        "        WHEN s.outgoings IS NULL THEN s.incomings\n",
+        "        ELSE s.incomings-s.outgoings\n",
+        "    END AS net_buffer\n",
         "FROM workspace.joint_statements_gold.joint_statements s\n",
-        "INNER JOIN budgets b\n",
+        "LEFT JOIN budgets b\n",
         "    ON s.category = b.category\n",
         "    AND s.year * 12 + s.month >= b.budget_month\n",
         "    AND (b.next_budget_month IS NULL OR s.year * 12 + s.month < b.next_budget_month)\n",
@@ -53,6 +64,41 @@
           "expression": "`incomings` - `outgoings`"
         }
       ]
+    },
+    {
+      "name": "9a2f50fd",
+      "displayName": "joint_statements",
+      "config": {
+        "version": "1.1",
+        "source": "workspace.joint_statements_gold.joint_statements",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "a685c68f",
+      "displayName": "Statement Totals",
+      "queryLines": [
+        "SELECT \n",
+        "    s.year, \n",
+        "    s.month, \n",
+        "    SUM(s.incomings) AS total_incomings,\n",
+        "    SUM(s.outgoings) AS total_outgoings,\n",
+        "    SUM(s.incomings) - SUM(s.outgoings) AS net_balance\n",
+        "FROM workspace.joint_statements_gold.joint_statements s\n",
+        "GROUP BY s.year, s.month;"
+      ]
     }
   ],
   "pages": [
@@ -60,6 +106,65 @@
       "name": "5c2e42ae",
       "displayName": "Global Filters",
       "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "1023c7eb",
+      "displayName": "Overview",
+      "layout": [
+        {
+          "widget": {
+            "name": "975f47b5",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "3a97cf87",
+                  "fields": [
+                    {
+                      "name": "month",
+                      "expression": "`month`"
+                    },
+                    {
+                      "name": "sum(net_buffer)",
+                      "expression": "SUM(`net_buffer`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "month",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(net_buffer)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
       "layoutVersion": "GRID_V1"
     },
     {
@@ -110,7 +215,7 @@
             }
           },
           "position": {
-            "x": 0,
+            "x": 4,
             "y": 0,
             "width": 4,
             "height": 1
@@ -160,7 +265,7 @@
             }
           },
           "position": {
-            "x": 4,
+            "x": 8,
             "y": 0,
             "width": 4,
             "height": 1
@@ -247,7 +352,7 @@
           },
           "position": {
             "x": 0,
-            "y": 1,
+            "y": 4,
             "width": 6,
             "height": 6
           }
@@ -300,10 +405,146 @@
             }
           },
           "position": {
-            "x": 0,
-            "y": 7,
+            "x": 6,
+            "y": 4,
             "width": 6,
-            "height": 5
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "incomings",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "3a97cf87",
+                  "fields": [
+                    {
+                      "name": "sum(incomings)",
+                      "expression": "SUM(`incomings`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "<span style=\"font-size:14px\">Total Incomings</span>",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(incomings)"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "outgoings",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "3a97cf87",
+                  "fields": [
+                    {
+                      "name": "sum(outgoings)",
+                      "expression": "SUM(`outgoings`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "<span style=\"font-size:14px\">Total Expenses</span>",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(outgoings)"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 1,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c080bc7d",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "3a97cf87",
+                  "fields": [
+                    {
+                      "name": "sum(net_buffer)",
+                      "expression": "SUM(`net_buffer`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "showDescription": false,
+                "title": {
+                  "value": "<span style=\"font-size:14px\">Net Balance</span>",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(net_buffer)"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 1,
+            "width": 4,
+            "height": 3
           }
         }
       ],
