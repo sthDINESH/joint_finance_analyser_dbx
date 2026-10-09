@@ -49,7 +49,11 @@
         "        WHEN s.incomings IS NULL THEN -s.outgoings\n",
         "        WHEN s.outgoings IS NULL THEN s.incomings\n",
         "        ELSE s.incomings-s.outgoings\n",
-        "    END AS net_buffer\n",
+        "    END AS net_balance,\n",
+        "    CASE\n",
+        "        WHEN b.budget IS NULL THEN -s.outgoings\n",
+        "        ELSE b.budget - s.outgoings\n",
+        "    END AS buffer_in_budget\n",
         "FROM workspace.joint_statements_gold.joint_statements s\n",
         "LEFT JOIN budgets b\n",
         "    ON s.category = b.category\n",
@@ -99,6 +103,35 @@
         "FROM workspace.joint_statements_gold.joint_statements s\n",
         "GROUP BY s.year, s.month;"
       ]
+    },
+    {
+      "name": "07e24cc9",
+      "displayName": "joint_statements",
+      "config": {
+        "version": "1.1",
+        "source": "workspace.joint_statements_silver.joint_statements",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          },
+          {
+            "name": "year",
+            "expr": "YEAR(source.date)"
+          },
+          {
+            "name": "month",
+            "expr": "MONTH(source.date)"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
     }
   ],
   "pages": [
@@ -109,67 +142,8 @@
       "layoutVersion": "GRID_V1"
     },
     {
-      "name": "1023c7eb",
-      "displayName": "Overview",
-      "layout": [
-        {
-          "widget": {
-            "name": "975f47b5",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "3a97cf87",
-                  "fields": [
-                    {
-                      "name": "month",
-                      "expression": "`month`"
-                    },
-                    {
-                      "name": "sum(net_buffer)",
-                      "expression": "SUM(`net_buffer`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "bar",
-              "encodings": {
-                "x": {
-                  "fieldName": "month",
-                  "scale": {
-                    "type": "quantitative"
-                  }
-                },
-                "y": {
-                  "fieldName": "sum(net_buffer)",
-                  "scale": {
-                    "type": "quantitative"
-                  }
-                }
-              },
-              "data": {
-                "queryName": "main_query"
-              }
-            }
-          },
-          "position": {
-            "x": 0,
-            "y": 0,
-            "width": 6,
-            "height": 6
-          }
-        }
-      ],
-      "pageType": "PAGE_TYPE_CANVAS",
-      "layoutVersion": "GRID_V1"
-    },
-    {
       "name": "581eafa8",
-      "displayName": "Monthly overview - Expenses",
+      "displayName": "Monthly overview",
       "layout": [
         {
           "widget": {
@@ -191,11 +165,40 @@
                   ],
                   "disaggregated": false
                 }
+              },
+              {
+                "name": "dashboards/01f1bd0359db1d0b91dd8ef7743b122d/datasets/01f1c26d88e614b8b3c356c5e6dd4297_year",
+                "query": {
+                  "datasetName": "07e24cc9",
+                  "fields": [
+                    {
+                      "name": "year",
+                      "expression": "`year`"
+                    },
+                    {
+                      "name": "year_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
               }
             ],
             "spec": {
               "version": 2,
               "disallowAll": true,
+              "selection": {
+                "defaultSelection": {
+                  "values": {
+                    "dataType": "INTEGER",
+                    "values": [
+                      {
+                        "value": "2026"
+                      }
+                    ]
+                  }
+                }
+              },
               "frame": {
                 "showTitle": true,
                 "title": {
@@ -209,13 +212,17 @@
                   {
                     "fieldName": "year",
                     "queryName": "dashboards/01f1bd0359db1d0b91dd8ef7743b122d/datasets/01f1c1a7cc36114e9093efa0fe18847b_year"
+                  },
+                  {
+                    "fieldName": "year",
+                    "queryName": "dashboards/01f1bd0359db1d0b91dd8ef7743b122d/datasets/01f1c26d88e614b8b3c356c5e6dd4297_year"
                   }
                 ]
               }
             }
           },
           "position": {
-            "x": 4,
+            "x": 0,
             "y": 0,
             "width": 4,
             "height": 1
@@ -241,11 +248,40 @@
                   ],
                   "disaggregated": false
                 }
+              },
+              {
+                "name": "dashboards/01f1bd0359db1d0b91dd8ef7743b122d/datasets/01f1c26d88e614b8b3c356c5e6dd4297_month",
+                "query": {
+                  "datasetName": "07e24cc9",
+                  "fields": [
+                    {
+                      "name": "month",
+                      "expression": "`month`"
+                    },
+                    {
+                      "name": "month_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
               }
             ],
             "spec": {
               "version": 2,
               "disallowAll": true,
+              "selection": {
+                "defaultSelection": {
+                  "values": {
+                    "dataType": "INTEGER",
+                    "values": [
+                      {
+                        "value": "9"
+                      }
+                    ]
+                  }
+                }
+              },
               "frame": {
                 "showTitle": true,
                 "title": {
@@ -259,13 +295,17 @@
                   {
                     "fieldName": "month",
                     "queryName": "dashboards/01f1bd0359db1d0b91dd8ef7743b122d/datasets/01f1c1a7cc36114e9093efa0fe18847b_month"
+                  },
+                  {
+                    "fieldName": "month",
+                    "queryName": "dashboards/01f1bd0359db1d0b91dd8ef7743b122d/datasets/01f1c26d88e614b8b3c356c5e6dd4297_month"
                   }
                 ]
               }
             }
           },
           "position": {
-            "x": 8,
+            "x": 5,
             "y": 0,
             "width": 4,
             "height": 1
@@ -273,7 +313,7 @@
         },
         {
           "widget": {
-            "name": "4e161497",
+            "name": "total-expense-per-category",
             "queries": [
               {
                 "name": "main_query",
@@ -298,12 +338,19 @@
               }
             ],
             "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block;\"><span style=\"font-size:18px\">Total expense per category</span></span>",
+                  "fields": []
+                }
+              },
               "version": 1,
               "mark": {
                 "colors": [
                   {
                     "themeColorType": "visualizationColors",
-                    "position": 1
+                    "position": 6
                   }
                 ]
               },
@@ -352,14 +399,14 @@
           },
           "position": {
             "x": 0,
-            "y": 4,
+            "y": 20,
             "width": 6,
             "height": 6
           }
         },
         {
           "widget": {
-            "name": "d108cf45",
+            "name": "expense-vs-previous-month",
             "queries": [
               {
                 "name": "main_query",
@@ -380,7 +427,22 @@
               }
             ],
             "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block;\"><span style=\"font-size:18px\">Expense compared to previous month</span></span>",
+                  "fields": []
+                }
+              },
               "version": 3,
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 8
+                  }
+                ]
+              },
               "widgetType": "bar",
               "encodings": {
                 "x": {
@@ -405,8 +467,8 @@
             }
           },
           "position": {
-            "x": 6,
-            "y": 4,
+            "x": 0,
+            "y": 26,
             "width": 6,
             "height": 6
           }
@@ -433,7 +495,7 @@
               "frame": {
                 "showTitle": true,
                 "title": {
-                  "value": "<span style=\"font-size:14px\">Total Incomings</span>",
+                  "value": "<span style=\"text-align:center;display:block;\"><span style=\"font-size:18px\">Total Incomings</span></span>",
                   "fields": []
                 }
               },
@@ -441,7 +503,13 @@
               "widgetType": "counter",
               "encodings": {
                 "value": {
-                  "fieldName": "sum(incomings)"
+                  "fieldName": "sum(incomings)",
+                  "style": {
+                    "fontColor": {
+                      "themeColorType": "visualizationColors",
+                      "position": 3
+                    }
+                  }
                 }
               },
               "data": {
@@ -451,8 +519,8 @@
           },
           "position": {
             "x": 0,
-            "y": 1,
-            "width": 4,
+            "y": 17,
+            "width": 3,
             "height": 3
           }
         },
@@ -478,7 +546,7 @@
               "frame": {
                 "showTitle": true,
                 "title": {
-                  "value": "<span style=\"font-size:14px\">Total Expenses</span>",
+                  "value": "<span style=\"text-align:center;display:block;\"><span style=\"font-size:18px\">Total Expenses</span></span>",
                   "fields": []
                 }
               },
@@ -486,7 +554,13 @@
               "widgetType": "counter",
               "encodings": {
                 "value": {
-                  "fieldName": "sum(outgoings)"
+                  "fieldName": "sum(outgoings)",
+                  "style": {
+                    "fontColor": {
+                      "themeColorType": "visualizationColors",
+                      "position": 6
+                    }
+                  }
                 }
               },
               "data": {
@@ -495,9 +569,9 @@
             }
           },
           "position": {
-            "x": 4,
-            "y": 1,
-            "width": 4,
+            "x": 3,
+            "y": 17,
+            "width": 3,
             "height": 3
           }
         },
@@ -511,8 +585,8 @@
                   "datasetName": "3a97cf87",
                   "fields": [
                     {
-                      "name": "sum(net_buffer)",
-                      "expression": "SUM(`net_buffer`)"
+                      "name": "sum(net_balance)",
+                      "expression": "SUM(`net_balance`)"
                     }
                   ],
                   "disaggregated": false
@@ -524,7 +598,7 @@
                 "showTitle": true,
                 "showDescription": false,
                 "title": {
-                  "value": "<span style=\"font-size:14px\">Net Balance</span>",
+                  "value": "<span style=\"text-align:center;display:block;\"><span style=\"font-size:18px\">Net Balance</span></span>",
                   "fields": []
                 }
               },
@@ -532,7 +606,37 @@
               "widgetType": "counter",
               "encodings": {
                 "value": {
-                  "fieldName": "sum(net_buffer)"
+                  "fieldName": "sum(net_balance)",
+                  "style": {
+                    "rules": [
+                      {
+                        "condition": {
+                          "operand": {
+                            "type": "data-value",
+                            "value": "0"
+                          },
+                          "operator": "<"
+                        },
+                        "fontColor": {
+                          "themeColorType": "visualizationColors",
+                          "position": 4
+                        }
+                      },
+                      {
+                        "condition": {
+                          "operand": {
+                            "type": "data-value",
+                            "value": "0"
+                          },
+                          "operator": ">="
+                        },
+                        "fontColor": {
+                          "themeColorType": "visualizationColors",
+                          "position": 2
+                        }
+                      }
+                    ]
+                  }
                 }
               },
               "data": {
@@ -541,10 +645,439 @@
             }
           },
           "position": {
-            "x": 8,
-            "y": 1,
-            "width": 4,
+            "x": 6,
+            "y": 17,
+            "width": 3,
             "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "daily-transactions",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "07e24cc9",
+                  "fields": [
+                    {
+                      "name": "string_agg(description, delimiter=, )",
+                      "expression": "STRING_AGG(`description`, ', ')"
+                    },
+                    {
+                      "name": "daily(date)",
+                      "expression": "DATE_TRUNC(\"DAY\", `date`)"
+                    },
+                    {
+                      "name": "sum(credit)",
+                      "expression": "SUM(`credit`)"
+                    },
+                    {
+                      "name": "sum(debit)",
+                      "expression": "SUM(`debit`)"
+                    },
+                    {
+                      "name": "min(balance)",
+                      "expression": "MIN(`balance`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "showDescription": false,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block\"><span style=\"font-size:18px\">Daily Transactions</span></span>",
+                  "fields": []
+                }
+              },
+              "version": 1,
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 6
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  }
+                ]
+              },
+              "widgetType": "combo",
+              "encodings": {
+                "label": {
+                  "show": true
+                },
+                "extra": [
+                  {
+                    "fieldName": "string_agg(description, delimiter=, )",
+                    "displayName": "Description"
+                  }
+                ],
+                "y": {
+                  "primary": {
+                    "fields": [
+                      {
+                        "fieldName": "sum(credit)",
+                        "displayName": "Total incomings"
+                      },
+                      {
+                        "fieldName": "sum(debit)",
+                        "displayName": "Total expenses"
+                      }
+                    ]
+                  },
+                  "secondary": {
+                    "fields": [
+                      {
+                        "fieldName": "min(balance)",
+                        "displayName": "Remaining account balance"
+                      }
+                    ]
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "x": {
+                  "fieldName": "daily(date)",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "color": {
+                  "legend": {
+                    "position": "right"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 9,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "budget-buffer-per-category",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "3a97cf87",
+                  "fields": [
+                    {
+                      "name": "category",
+                      "expression": "`category`"
+                    },
+                    {
+                      "name": "buffer_in_budget",
+                      "expression": "`buffer_in_budget`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block;\"><span style=\"font-size:18px\">Budget buffer per category</span></span>",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "y": {
+                  "fieldName": "buffer_in_budget",
+                  "displayName": "Available buffer in budget",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "category",
+                  "legend": {
+                    "position": "right"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 23,
+            "width": 3,
+            "height": 9
+          }
+        },
+        {
+          "widget": {
+            "name": "buffer-in-budget",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "3a97cf87",
+                  "fields": [
+                    {
+                      "name": "sum(buffer_in_budget)",
+                      "expression": "SUM(`buffer_in_budget`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block;\"><span style=\"font-size:18px\">Total Budget Buffer</span></span>",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(buffer_in_budget)",
+                  "style": {
+                    "rules": [
+                      {
+                        "condition": {
+                          "operand": {
+                            "type": "data-value",
+                            "value": "0"
+                          },
+                          "operator": "<"
+                        },
+                        "fontColor": {
+                          "themeColorType": "visualizationColors",
+                          "position": 4
+                        }
+                      },
+                      {
+                        "condition": {
+                          "operand": {
+                            "type": "data-value",
+                            "value": "0"
+                          },
+                          "operator": ">="
+                        },
+                        "fontColor": {
+                          "themeColorType": "visualizationColors",
+                          "position": 2
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 20,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "8f4beda6",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "07e24cc9",
+                  "fields": [
+                    {
+                      "name": "date",
+                      "expression": "`date`"
+                    },
+                    {
+                      "name": "description",
+                      "expression": "`description`"
+                    },
+                    {
+                      "name": "debit",
+                      "expression": "`debit`"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`debit` IS NOT NULL"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "headerStyle": {
+                "backgroundColor": {
+                  "themeColorType": "visualizationColors",
+                  "position": 6
+                }
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "date",
+                    "displayName": "Date"
+                  },
+                  {
+                    "fieldName": "description",
+                    "displayName": "Description"
+                  },
+                  {
+                    "fieldName": "debit",
+                    "contentAlignment": "left",
+                    "displayName": "Expenses"
+                  }
+                ]
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 5,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "c25d7a71",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "07e24cc9",
+                  "fields": [
+                    {
+                      "name": "date",
+                      "expression": "`date`"
+                    },
+                    {
+                      "name": "description",
+                      "expression": "`description`"
+                    },
+                    {
+                      "name": "credit",
+                      "expression": "`credit`"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`credit` IS NOT NULL"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "headerStyle": {
+                "backgroundColor": {
+                  "themeColorType": "visualizationColors",
+                  "position": 3
+                }
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "date",
+                    "displayName": "Date"
+                  },
+                  {
+                    "fieldName": "description",
+                    "displayName": "Description"
+                  },
+                  {
+                    "fieldName": "credit",
+                    "contentAlignment": "left",
+                    "displayName": "Incomings"
+                  }
+                ]
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 5,
+            "y": 9,
+            "width": 4,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "68a232ee",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## <span style=\"text-align:center;display:block\"><span style=\"font-size: 36px;line-height: 1.5;\">Account Overview - Daily</span></span>"
+              ],
+              "verticalAlign": "VERTICAL_ALIGN_CENTER"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 9,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "d8b5ebe5",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## <span style=\"text-align:center;display:block\"><span style=\"font-size: 36px;line-height: 1.5;\">Monthly Stats</span></span>"
+              ],
+              "verticalAlign": "VERTICAL_ALIGN_CENTER"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 9,
+            "height": 2
           }
         }
       ],
