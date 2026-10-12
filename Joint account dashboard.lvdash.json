@@ -96,10 +96,12 @@
       "queryLines": [
         "SELECT \n",
         "    s.year, \n",
-        "    s.month, \n",
+        "    s.month,\n",
+        "    make_date(s.year, s.month, 28) AS date,\n",
         "    SUM(s.incomings) AS total_incomings,\n",
         "    SUM(s.outgoings) AS total_outgoings,\n",
-        "    SUM(s.incomings) - SUM(s.outgoings) AS net_balance\n",
+        "    SUM(s.incomings) - SUM(s.outgoings) AS net_balance,\n",
+        "    SUM(SUM(s.incomings) - SUM(s.outgoings)) OVER (ORDER BY year, month) AS cumulative_balance\n",
         "FROM workspace.joint_statements_gold.joint_statements s\n",
         "GROUP BY s.year, s.month;"
       ]
@@ -132,6 +134,26 @@
           }
         ]
       }
+    },
+    {
+      "name": "c13a26a7",
+      "displayName": "Monthly Incoming Totals Grouped By Description",
+      "queryLines": [
+        "SELECT\n",
+        "  YEAR(date) AS year,\n",
+        "  MONTH(date) AS month,\n",
+        "  make_date(YEAR(date), MONTH(date), 28) AS date,\n",
+        "  TRIM(REGEXP_REPLACE(description, '\\\\s+\\\\d{2}[A-Z]{3}\\\\d{2}\\\\s*$', '')) AS description,\n",
+        "  SUM(credit) AS total_incomings\n",
+        "FROM\n",
+        "  workspace.joint_statements_silver.joint_statements s\n",
+        "WHERE\n",
+        "  category = 'incomings'\n",
+        "GROUP BY\n",
+        "  year,\n",
+        "  month,\n",
+        "  TRIM(REGEXP_REPLACE(description, '\\\\s+\\\\d{2}[A-Z]{3}\\\\d{2}\\\\s*$', ''));"
+      ]
     }
   ],
   "pages": [
@@ -142,8 +164,413 @@
       "layoutVersion": "GRID_V1"
     },
     {
+      "name": "5a81cd0d",
+      "displayName": "The Big Picture",
+      "layout": [
+        {
+          "widget": {
+            "name": "fec3073d",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a685c68f",
+                  "fields": [
+                    {
+                      "name": "monthly(date)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `date`)"
+                    },
+                    {
+                      "name": "cumulative_balance",
+                      "expression": "`cumulative_balance`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  }
+                ],
+                "lineShape": "linear"
+              },
+              "widgetType": "area",
+              "encodings": {
+                "x": {
+                  "fieldName": "monthly(date)",
+                  "displayName": "Months",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "cumulative_balance",
+                  "displayName": "Cumulative Balance",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 19,
+            "width": 10,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "total-incomings",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a685c68f",
+                  "fields": [
+                    {
+                      "name": "sum(total_incomings)",
+                      "expression": "SUM(`total_incomings`)"
+                    },
+                    {
+                      "name": "monthly(date)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `date`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block\"><span style=\"font-size:18px\">Incomings</span></span>",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  }
+                ]
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(total_incomings)",
+                  "displayName": "Amount(£)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "monthly(date)",
+                  "displayName": "Months",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 5,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "total-outgoings",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a685c68f",
+                  "fields": [
+                    {
+                      "name": "sum(total_outgoings)",
+                      "expression": "SUM(`total_outgoings`)"
+                    },
+                    {
+                      "name": "monthly(date)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `date`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block;\"><span style=\"font-size: 18px;\">Outgoings</span></span>",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 6
+                  }
+                ]
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(total_outgoings)",
+                  "displayName": "Amount(£)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "monthly(date)",
+                  "displayName": "Months",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 5,
+            "y": 3,
+            "width": 5,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "7ce3b4e4",
+            "queries": [
+              {
+                "name": "dashboards/01f1bd0359db1d0b91dd8ef7743b122d/datasets/01f1c269a59d1755807cbe26f64602d4_date",
+                "query": {
+                  "datasetName": "a685c68f",
+                  "fields": [
+                    {
+                      "name": "date",
+                      "expression": "`date`"
+                    },
+                    {
+                      "name": "date_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": false
+              },
+              "widgetType": "filter-date-range-picker",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "date",
+                    "queryName": "dashboards/01f1bd0359db1d0b91dd8ef7743b122d/datasets/01f1c269a59d1755807cbe26f64602d4_date"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 4,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "incomings-contributor-breakdowns",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "c13a26a7",
+                  "fields": [
+                    {
+                      "name": "description",
+                      "expression": "`description`"
+                    },
+                    {
+                      "name": "monthly(date)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `date`)"
+                    },
+                    {
+                      "name": "total_incomings",
+                      "expression": "`total_incomings`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "facet": {
+                "type": "wrap",
+                "fieldName": "description",
+                "header": {
+                  "title": "Contributions"
+                },
+                "displayName": "Contributions",
+                "scale": {
+                  "type": "categorical"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block\"><span style=\"font-size:18px\">Incomings</span></span>",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "monthly(date)",
+                  "displayName": "Months",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "total_incomings",
+                  "displayName": "Amount(£)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "description",
+                  "legend": {
+                    "hide": true
+                  },
+                  "scale": {
+                    "type": "categorical",
+                    "mappings": [
+                      {
+                        "value": "C RIMMER",
+                        "color": {
+                          "themeColorType": "visualizationColors",
+                          "position": 5
+                        }
+                      }
+                    ]
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 11,
+            "width": 10,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "28211bfd",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## <span style=\"text-align:center;display:block\">Contributions Breakdown</span>"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 10,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "5367b4b6",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## <span style=\"text-align:center;display:block\">Incomings vs Outgoings</span>"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 10,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "77f07554",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## <span style=\"text-align:center;display:block;\">Built up Balance</span>"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 17,
+            "width": 10,
+            "height": 2
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
       "name": "581eafa8",
-      "displayName": "Monthly overview",
+      "displayName": "The Monthly Breakdown",
       "layout": [
         {
           "widget": {
