@@ -25,27 +25,27 @@ The dashboard is where planned spending meets reality. It compares budgets with 
 
 • `Databricks Dashboards`
 
-## 3. Architecture
+## Architecture
 
-SpendSense uses a Databricks medallion architecture. The repository documents the transformation and deployment layers; the ingestion process that creates the Bronze tables is treated as the source-data boundary.
+**`SpendSense`** follows a Databricks `medallion architecture`. Google Drive is the source-data boundary, with statements and budgets moving through separate Bronze, Silver, and Gold layers. Each dataset has its own ETL pipeline and curated analytical tables before the dashboard brings the two Gold outputs together for reporting.
 
-```text
-Google Drive statements and budgets
-					 |
-					 v
-		 Bronze ingestion tables
-					 |
-					 v
-		 Silver cleaning and categorisation
-					 |
-					 v
-		 Gold monthly analytical tables
-					 |
-					 v
-				 Dashboards
+```mermaid
+flowchart TD
+    A[Google Drive] --> B[Statement Bronze table]
+    A --> C[Budget Bronze table]
+    B --> D[Statements ETL pipeline]
+    C --> E[Budget ETL pipeline]
+    D --> F[Statement Silver table]
+    E --> G[Budget Silver table]
+    F --> H[Statement Gold table]
+    G --> I[Budget Gold table]
+    H --> J[Databricks dashboard]
+    I --> J
 ```
 
-Statements and budgets follow separate ETL pipelines, but both use the same Bronze, Silver, and Gold pattern. The [Databricks bundle configuration](bronze_to_silver_to_gold/databricks.yml) defines development and production targets, while the [dashboard definition](Joint%20account%20dashboard.lvdash.json) joins the Gold outputs for reporting.
+- [Databricks bundle configuration](bronze_to_silver_to_gold/databricks.yml) defines development and production deployment targets. 
+- [Pipeline resources](bronze_to_silver_to_gold/resources) orchestrate the statement and budget workflows.
+- [Dashboard definition](Joint%20account%20dashboard.lvdash.json) joins their Gold outputs for reporting.
 
 ## 4. Data Pipelines
 
