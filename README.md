@@ -1,13 +1,15 @@
 # SpendSense
 ![SpendSense banner](images/banner.webp)
 
-> *Make sense of your spending.*
-
 ## 1. Project Overview
 
-SpendSense is a Databricks-based financial analytics project for turning joint-account statements and monthly budgets into curated financial data. Source files are ingested into Bronze tables, cleaned and categorised through Silver transformations, and aggregated into Gold tables for analysis.
+> Ever looked at your bank statements and thought, "I recognise all these transactions, so why does none of this make sense?"
 
-The dashboard combines the separate statement and budget Gold datasets to compare planned spending with actual outgoings, while tracking income, balances, and month-to-month changes. For now, SpendSense is used to track and understand spending across a joint account.
+That was the idea behind **`SpendSense`**: a Databricks-based financial analytics project built to clarify where the money is going.
+
+It brings together **joint-account statements** and **monthly budgets**, turning a jumble of transactions and good intentions into a clearer view of everyday finances.
+
+The dashboard is where planned spending meets reality. It compares budgets with actual outgoings, tracks income and balances, and highlights month-to-month changes, helping turn the question "Where did the money go?" into something easier to answer.
 
 ## 2. Key Features
 
