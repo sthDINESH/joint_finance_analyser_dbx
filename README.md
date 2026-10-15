@@ -1,7 +1,7 @@
 # SpendSense
 ![SpendSense banner](images/banner.webp)
 
-## 1. Project Overview
+## Project Overview
 
 > Ever looked at your bank statements and thought, "I recognise all these transactions, so why does none of this make sense?"
 
@@ -11,16 +11,19 @@ It brings together **joint-account statements** and **monthly budgets**, turning
 
 The dashboard is where planned spending meets reality. It compares budgets with actual outgoings, tracks income and balances, and highlights month-to-month changes, helping turn the question "Where did the money go?" into something easier to answer.
 
-## 2. Key Features
+## Key Features
 
-- Ingests joint-account statements and monthly budget data from Google Drive.
-- Cleans and standardises dates, amounts, descriptions, balances, and budget values.
-- Categorises transactions and budget lines using configurable keywords.
-- Joins planned budgets with actual statement activity in the dashboard layer.
-- Aggregates financial activity by month and category.
-- Calculates month-to-month changes for spending, income, and budgets.
-- Calculates dashboard metrics such as net balance, cumulative balance, and budget buffer.
-- Publishes curated Gold tables for dashboard analysis.
+• `Data Ingestion from Google Drive` 
+
+• `Statements and Budget ETL Pipelines` • `Data Cleaning and Standardisation` 
+
+• `Rule-Based Categorisation` 
+
+• `Monthly Aggregations` • `Month-to-Month Metrics` 
+
+• `Curated Gold Tables` 
+
+• `Databricks Dashboards`
 
 ## 3. Architecture
 
